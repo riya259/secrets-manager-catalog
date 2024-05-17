@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: s3-bucket
+  annotations:
+    github.com/project-slug: riya259/secret-manager-catalog
+    backstage.io/techdocs-ref: value
+  title: 'Secrets Creation'
+  description: An example of a Secret Creation.
+spec:
+  type: service
+  lifecycle: experimental
+  owner: user:guest

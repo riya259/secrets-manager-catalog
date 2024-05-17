@@ -1,0 +1,106 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: Secret Manager
+  title: Create AWS secrets
+  description: AWS secrets Creation
+  tags: ['recommended']
+spec:
+  owner: guests
+  type: service
+  parameters:
+    - title: AWS Secrets Creation
+      required:
+         - SecretName
+         - UserName
+         - Password
+      properties:
+        SecretName:
+          title: Secret Name
+          type: string
+          description: Name of the Secret to be created.
+          ui:autofocus: true
+          ui:options:
+            rows: 5
+
+        UserName:
+          title: User Name
+          type: string
+          description: Enter the username stored in secret
+
+        Password:
+          title: credential
+          type: string
+          description: Enter the password stored in secret
+
+        action:
+          title: action
+          type: string
+          description: What action do you want to perform? Create or delete?
+          enum:
+            - apply
+            - destroy
+
+    - title: Choose a Repository Location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Location of the repository
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  steps:
+# Getting the all the files/details from the template
+    - id: fetch-base
+      name: Fetching Details from content folder
+      action: fetch:template
+      input:
+        url: ./content  # Location of the content directory where catlog-info.yaml file is present for the template
+        values:
+          name: ${{ parameters.SecretName}}
+
+# Publish the content of the current working directory to our github directory
+    - id: publish
+      name: Publishing Details
+      action: publish:github
+      input:
+        allowedHosts: ['github.com']
+        description: This repo is to create AWS secret ${{ parameters.SecretName }} using backstage.
+        repoUrl: ${{ parameters.repoUrl }}
+        repoVisibility: public # or 'internal' or 'private'
+        # defaultBranch: master
+
+# Triggering CI-CD to create resource in our case github action.
+    - id: github-action
+      name: Starting GitHub action
+      action: github:actions:dispatch
+      input:
+        workflowId:  s3bucket.yaml # ID of GitHub action WorkFlow
+        repoUrl: 'github.com?repo=secrets-manager-catalog&owner=riya259'
+        branchOrTagName: 'master'
+        workflowInputs:
+          secretname: ${{ parameters.SecretName }}
+          username: ${{ parameters.UserName }}
+          password: ${{ parameters.Password }}
+          action: ${{ parameters.action }}
+
+# Registering new component in the catalog of backstage.
+    - id: register
+      name: Registering the new Component
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml' # where the info of the catalog is stored.
+
+# Output links  are displayed to the user after the template execution.
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
