@@ -3,7 +3,7 @@ kind: Component
 metadata:
   name: s3-bucket
   annotations:
-    github.com/project-slug: riya259/secret-manager-catalog
+    github.com/project-slug: riya259/secrets-manager-catalog
     backstage.io/techdocs-ref: value
   title: 'Secrets Creation'
   description: An example of a Secret Creation.
